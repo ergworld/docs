@@ -57,7 +57,7 @@ The `url` property contains the full URL to establish a WebSocket connection wit
 
 Subscriptions, metadata, workout and progress updates happen via WebSocket messages in a **stringified JSON** format.
 
-Stringified JSON is an array of `action` and `payload`: `[ action, payload ]`.
+Stringified JSON is a list of `action` and `payload`: `[ action, payload ]`.
 
 String values (such as the identifier or the indexed metadata fields) have a maximum length of 64, anything longer will be truncated.
 
@@ -72,21 +72,34 @@ wsClient.onopen = function (): void {
 };
 ```
 
-The message you will received is a list of participations:
+The message you will receive is either a number for heat countdown or a list of participations:
 
 ```js
 [ // list of participations
   [ // a participation
     "[unique_id]", // end-user/ergometer identifier
     1603664079211, // joined timestamp
-    1603664079236, // last updated timestamp
-    { // indexed metadata
-      "group": "[group_id]", // optional group
-      "type": "[type]", // optional type
-      "name": "[name]", // optional name
-    },
-    [0,0,0,0,0,0,0,0], // [ Workout State, Workout Type, Workout Duration, Workout Duration Type, Interval Type, Interval Count, Projected Time, Projected Distance ]
-    [0,0,0,0,0,0,0], // [ Time, Distance, Pace, Watts, Cal/Hr, Stroke Rate, Heart Rate ]
+    "group=[group_id]&type=[type]&name=[name], // indexed metadata
+    [
+      0, // ElapsedTime
+      0, // Distance
+      0, // Pace
+      0, // Watts
+      0, // Cal/Hr
+      0, // Stroke Rate
+      0, // Heart Rate
+      0, // Workout State
+      0, // Workout Type
+      0, // Workout Duration
+      0, // Workout Duration Type
+      0, // Interval Count
+      0, // Projected Time
+      0, // Projected Distance
+    ],
+    [
+      0, // Longitude
+      0, // Latitude
+    ]
   ],
   ...
 ]
@@ -97,9 +110,10 @@ The message you will received is a list of participations:
 ErgWorld Global allows subscriptions to the indexed metadata fields of individual participations.
 
 List of currently supported indexed metadata fields:
-- `group` - (optional) this can be any string
-- `type` - (optional) we intended tis field for a short manufacturer and model specs
-- `name` - (optional) participation display name
+- `anonymous` - (optional) `boolean` randum unique name will be generated
+- `group` - (optional) `string` anything
+- `type` - (optional) `string` we intended tis field for a short manufacturer and model specs
+- `name` - (optional) `string` participation display name
 
 If the fields aren't set, they won't appear in the broadcasted state.
 
@@ -170,26 +184,35 @@ Format:
     group: "[group]",
     type: "[type]",
     name: "[name]",
+    anonymous: true,
   }
 ]
 ```
 
-#### Workout properties
+#### Workout status
 
 > Action: `0x2`
 
-This list describes the individual participation's workout/interval states in order shown below
+This list describes the individual participation's workout/interval states in order shown below.
+
+Please always send all the data otherwise the item will be zeroed out.
 
 Format:
 ```js
 [
   0x2, // workout update action
   [
+    0, // ElapsedTime
+    0, // Distance
+    0, // Pace
+    0, // Watts
+    0, // Cal/Hr
+    0, // Stroke Rate
+    0, // Heart Rate
     0, // Workout State
     0, // Workout Type
     0, // Workout Duration
     0, // Workout Duration Type
-    0, // Interval Type
     0, // Interval Count
     0, // Projected Time
     0, // Projected Distance
@@ -197,24 +220,19 @@ Format:
 ]
 ```
 
-#### Progress updates
+#### Location updates
 
 > Action: `0x3`
 
-This list describes the individual participation's progress state in order shown below
+This list describes the individual participation's location
 
 Format:
 ```js
 [
-  0x3, // progress update action
+  0x3, // location update action
   [
-    0, // Time (seconds) - elapsed
-    0, // Distance (meters) - total or current interval
-    0, // Pace (seconds)
-    0, // Watts - last output
-    0, // Cal/Hr - last output
-    0, // Stroke Rate - last output
-    0, // Heart Rate - current HR
+    0, // Longitude
+    0, // Latitude
   ]
 ]
 ```
