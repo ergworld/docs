@@ -1,6 +1,6 @@
-# ErgWorld Global (beta)
+# ErgWorld (beta)
 
-Documentation to integrate custom applications into the new ErgWorld Global platform
+Documentation to integrate custom applications into the new ErgWorld platform
 
 ## How to register an application to use ErgWorld's services
 Currently, this process is manual. Please drop us an [email](mailto:support@ergworld.com?subject=Application%20Request) with the following details:
@@ -16,7 +16,7 @@ We will review and approve the application and will respond to your **applicatio
 ## How to connect to ErgWorld 
 Once you received the credentails, you are able to use the platform.
 
-Estabilising a connection to ErgWorld Global is a 2-step process:
+Estabilising a connection to ErgWorld is a 2-step process:
 1. request access to establish connection
 2. estabilish WebSocket connection with the provided access token
 
@@ -47,13 +47,13 @@ Response
 }
 ```
 
-#### 2. Estabilish WebSocket connection to ErgWorld Global
+#### 2. Estabilish WebSocket connection to ErgWorld
 
 The `url` property contains the full URL to establish a WebSocket connection with.
 
 > **Important** The access tokens are valid for 60 seconds only!
 
-## ErgWorld Global Message Format
+## ErgWorld Message Format
 
 Subscriptions, metadata, workout and progress updates happen via WebSocket messages in a **stringified JSON** format.
 
@@ -79,7 +79,7 @@ The message you will receive is either a number for heat countdown or a list of 
   [ // a participation
     "[unique_id]", // end-user/ergometer identifier
     1603664079211, // joined timestamp
-    "group=[group_id]&type=[type]&name=[name], // indexed metadata
+    "g=[group]&l=[lobby]&t=[type]&n=[name], // metadata
     [
       0, // ElapsedTime
       0, // Distance
@@ -105,15 +105,15 @@ The message you will receive is either a number for heat countdown or a list of 
 ]
 ```
 
-## Subscribe to ErgWorld Global
+## Subscribe to ErgWorld
 
-ErgWorld Global allows subscriptions to the indexed metadata fields of individual participations.
+ErgWorld allows subscriptions to the indexed metadata fields of individual participations.
 
 List of currently supported indexed metadata fields:
-- `anonymous` - (optional) `boolean` randum unique name will be generated
-- `group` - (optional) `string` anything
-- `type` - (optional) `string` we intended tis field for a short manufacturer and model specs
-- `name` - (optional) `string` participation display name
+- `g` - (optional - defaults to `'*'`) `string` unique group ID
+- `l` - (optional - defaults to `'*'`) `string` lobby within group
+- `t` - (optional) `string` we intended tis field for a short manufacturer and model specs
+- `n` - (optional) `string` participation display name
 
 If the fields aren't set, they won't appear in the broadcasted state.
 
@@ -126,10 +126,30 @@ In order to start receiving updates, a subscription is needed.
 Example - global subscription:
 ```js
 wsClient.send(JSON.strigify(
+  [ 0xa ]
+));
+```
+
+Same as
+```js
+wsClient.send(JSON.strigify(
   [
     0xa,
     {
-      "*": "*"
+      group: '*',
+      lobby: '*',
+    }
+  ]
+));
+```
+
+Example - global subscription for a lobby:
+```js
+wsClient.send(JSON.strigify(
+  [
+    0xa,
+    {
+      lobby: 'hakuna matata'
     }
   ]
 ));
@@ -147,16 +167,17 @@ wsClient.send(JSON.strigify(
 ));
 ```
 
-Currently, we allow **only one** indexed metadata field subscription. We may allow multi-key subscriptions later - we are still debating if it's necessary.
-
+Example - group lobbies:
 ```js
-[
-  0xa,
-  {
-    group: "[group_id]", // first key-value pair will be used
-    type: "..." // will be ignored
-  }
-]
+wsClient.send(JSON.strigify(
+  [
+    0xa,
+    {
+      group: 'most_epic_group_ever',
+      lobby: 'hakuna matata'
+    }
+  ]
+));
 ```
 
 Subscribing will automatically unsubscribe from existing subscriptions.
@@ -202,20 +223,20 @@ Format:
 [
   0x2, // workout update action
   [
-    0, // ElapsedTime
-    0, // Distance
-    0, // Pace
+    0, // ElapsedTime (seconds)
+    0, // Distance (meters)
+    0, // Pace (seconds)
     0, // Watts
     0, // Cal/Hr
     0, // Stroke Rate
     0, // Heart Rate
     0, // Workout State
     0, // Workout Type
-    0, // Workout Duration
+    0, // Workout Duration (calories, meters, seconds)
     0, // Workout Duration Type
     0, // Interval Count
-    0, // Projected Time
-    0, // Projected Distance
+    0, // Projected Time (seconds)
+    0, // Projected Distance (meters)
   ]
 ]
 ```
